@@ -1,36 +1,67 @@
+"""
+Funk Land - ساخت خودکار songs.json از پوشه uploads
+"""
 import os
 import json
 import time
 
-# لیست آهنگ‌های موجود رو از songs.json قدیمی بخون (اگه بود)
+# ==================== تنظیمات ====================
+UPLOADS_DIR = "uploads"
+OUTPUT_FILE = "songs.json"
+AUDIO_EXT = [".mp3", ".m4a", ".ogg", ".wav", ".webm", ".flac", ".aac", ".opus"]
+
+# ==================== خوندن songs.json قبلی ====================
 existing = {}
-if os.path.exists('songs.json'):
-    with open('songs.json', 'r', encoding='utf-8') as f:
-        for song in json.load(f):
-            existing[song['file']] = song
+if os.path.exists(OUTPUT_FILE):
+    try:
+        with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
+            for song in json.load(f):
+                existing[song["file"]] = song
+    except Exception as e:
+        print(f"خطا در خوندن songs.json: {e}")
 
-# فایل‌های صوتی رو تو پوشه uploads پیدا کن
-audio_ext = ['.mp3', '.m4a', '.ogg', '.wav', '.flac']
+# ==================== پیدا کردن فایل‌های صوتی ====================
+if not os.path.exists(UPLOADS_DIR):
+    print(f"پوشه {UPLOADS_DIR} وجود نداره!")
+    exit(1)
+
 songs = []
+files = sorted(os.listdir(UPLOADS_DIR))
 
-for filename in sorted(os.listdir('uploads')):
-    if any(filename.lower().endswith(ext) for ext in audio_ext):
-        if filename in existing:
-            # اگه قبلاً بود، اطلاعات قبلی رو نگه دار
-            songs.append(existing[filename])
-        else:
-            # آهنگ جدید: اسم رو از اسم فایل بساز
-            name = os.path.splitext(filename)[0]
-            name = name.replace('-', ' ').replace('_', ' ').title()
-            songs.append({
-                "name": name,
-                "file": filename,
-                "date": int(time.time())  # تاریخ الان
-            })
+for filename in files:
+    # فقط فایل‌های صوتی
+    if not any(filename.lower().endswith(ext) for ext in AUDIO_EXT):
+        continue
+    
+    filepath = os.path.join(UPLOADS_DIR, filename)
+    if not os.path.isfile(filepath):
+        continue
+    
+    if filename in existing:
+        # آهنگ قبلی — اطلاعات قبلی رو نگه دار
+        song = existing[filename]
+        print(f"✅ قدیمی: {filename} → {song['name']}")
+    else:
+        # آهنگ جدید — اسم از اسم فایل
+        base = os.path.splitext(filename)[0]
+        name = base.replace("-", " ").replace("_", " ")
+        name = " ".join(name.split())  # حذف فاصله‌های اضافی
+        name = name.title()  # First Letter Of Each Word Capital
+        
+        song = {
+            "name": name,
+            "file": filename,
+            "date": int(time.time())
+        }
+        print(f"🆕 جدید: {filename} → {name}")
+    
+    songs.append(song)
 
-# مرتب‌سازی: جدیدترین اول
-songs.sort(key=lambda x: x.get('date', 0), reverse=True)
+# ==================== مرتب‌سازی: جدیدترین اول ====================
+songs.sort(key=lambda x: x.get("date", 0), reverse=True)
 
-# ذخیره تو songs.json
-with open('songs.json', 'w', encoding='utf-8') as f:
+# ==================== نوشتن ====================
+with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
     json.dump(songs, f, ensure_ascii=False, indent=2)
+
+print(f"\n✅ songs.json ساخته شد — {len(songs)} آهنگ")

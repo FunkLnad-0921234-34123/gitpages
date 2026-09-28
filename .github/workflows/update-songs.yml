@@ -1,0 +1,31 @@
+name: Update songs.json on upload
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'uploads/**'  # فقط وقتی فایلی تو این پوشه تغییر کرد
+
+jobs:
+  update-songs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # برای اینکه بتونه فایل رو کامیت و پوش کنه
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate songs.json from uploads folder
+        run: |
+          # اسکریپت پایتون یا شل برای ساخت JSON
+          # ... (کد اسکریپت در ادامه)
+      
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add songs.json
+          git diff --staged --quiet || git commit -m "Auto-update songs.json"
+          git push
